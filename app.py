@@ -22,9 +22,9 @@ loop.run_until_complete(application.initialize())
 
 
 
-
-
-
+application.add_handler(CommandHandler("start", auto_collector_bot.start))
+application.add_handler(CommandHandler("drop", auto_collector_bot.drop))
+application.add_handler(CommandHandler("garage", auto_collector_bot.garage))
 application.add_handler(CommandHandler("collection", auto_collector_bot.collection))
 application.add_handler(CommandHandler("top", auto_collector_bot.top))
 application.add_handler(CommandHandler("rarity", auto_collector_bot.rarity_info))
@@ -52,3 +52,4 @@ if __name__ == '__main__':
     # Эта часть нужна только для локального запуска
 
     app.run()
+
