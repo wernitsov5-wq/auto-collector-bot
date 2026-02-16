@@ -37,12 +37,16 @@ auto_collector_bot.init_database()
 # Flask-приложение для приема веб-хуков
 app = Flask(__name__)
 
+# ПРОВЕРКА: обрабатываем обновления напрямую
+from telegram.ext import Updater
+
 @app.route('/webhook', methods=['POST'])
 def webhook():
     """Принимает обновления от Telegram"""
     update = Update.de_json(request.get_json(force=True), application.bot)
-    # Запускаем обработку обновления в фоне, чтобы не блокировать ответ Flask
-    application.update_queue.put_nowait(update)
+    # Обрабатываем обновление напрямую
+    import asyncio
+    asyncio.create_task(application.process_update(update))
     return 'OK', 200
 
 @app.route('/')
@@ -53,5 +57,6 @@ if __name__ == '__main__':
     # Эта часть нужна только для локального запуска
 
     app.run()
+
 
 
