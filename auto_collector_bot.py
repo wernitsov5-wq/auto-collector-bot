@@ -403,7 +403,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "💎 /rarity - Редкости машин",
         parse_mode='Markdown'
     )
-
+    
+async def test(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("✅ ТЕСТ РАБОТАЕТ!")
+    
 # ===== ПОЛУЧИТЬ МАШИНУ =====
 async def drop(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
@@ -761,3 +764,4 @@ def main():
 if __name__ == "__main__":
 
     main()
+
