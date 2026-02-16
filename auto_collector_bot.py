@@ -405,6 +405,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     
 async def test(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print("✅ Функция test вызвана!")
     await update.message.reply_text("✅ ТЕСТ РАБОТАЕТ!")
     
 # ===== ПОЛУЧИТЬ МАШИНУ =====
@@ -764,5 +765,6 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 
 
