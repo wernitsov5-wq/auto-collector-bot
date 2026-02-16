@@ -355,13 +355,32 @@ def get_random_car():
 # ===== КОМАНДА СТАРТ =====
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
-    
+
     conn = sqlite3.connect('auto_collector.db')
     c = conn.cursor()
     c.execute("INSERT OR IGNORE INTO users (user_id, username, first_name, joined_date, last_drop) VALUES (?, ?, ?, ?, ?)",
               (user.id, user.username, user.first_name, datetime.now(), datetime.now() - timedelta(minutes=6)))
     conn.commit()
     conn.close()
+
+    # ОТПРАВЛЯЕМ ПРИВЕТСТВИЕ
+    await update.message.reply_text(
+        f"🚗 **AUTO COLLECTOR** 🚗\n\n"
+        f"Привет, {user.first_name}!\n"
+        f"💰 Кредитов: 100\n\n"
+        f"**КОМАНДЫ:**\n"
+        f"🎲 /drop - Получить машину (каждые 5 мин)\n"
+        f"🚘 /garage - Мой гараж\n"
+        f"📊 /collection - Статистика коллекции\n"
+        f"🤝 /trade @user [id] - Обмен с друзьями\n"
+        f"🏆 /top - Топ коллекционеров\n"
+        f"💎 /rarity - Редкости машин\n\n"
+        f"🚗 *Все названия марок являются вымышленными*",
+        parse_mode='Markdown'
+    )
+    
+    parse_mode='Markdown'
+    )
     
     # Считаем статистику
     total_cars = len(CARS_DATABASE)
@@ -740,4 +759,5 @@ def main():
     application.run_polling()
 
 if __name__ == "__main__":
+
     main()
