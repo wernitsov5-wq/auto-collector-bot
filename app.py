@@ -42,12 +42,22 @@ from telegram.ext import Updater
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
-    """Принимает обновления от Telegram"""
-    update = Update.de_json(request.get_json(force=True), application.bot)
-    # Обрабатываем обновление напрямую
-    import asyncio
-    asyncio.create_task(application.process_update(update))
-    return 'OK', 200
+    try:
+        print("🔥 Вебхук вызван!")
+        update = Update.de_json(request.get_json(force=True), application.bot)
+        print(f"🔥 Получено обновление: {update}")
+
+        # Создаём задачу
+        import asyncio
+        asyncio.create_task(application.process_update(update))
+        print("🔥 Задача создана")
+        return 'OK', 200
+
+    except Exception as e:
+        print(f"❌ ОШИБКА: {e}")
+        import traceback
+        traceback.print_exc()
+        return 'Error', 500
 
 @app.route('/')
 def index():
@@ -57,6 +67,7 @@ if __name__ == '__main__':
     # Эта часть нужна только для локального запуска
 
     app.run()
+
 
 
 
