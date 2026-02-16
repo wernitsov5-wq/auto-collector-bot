@@ -57,7 +57,7 @@ def webhook():
         print(f"❌ ОШИБКА: {e}")
         import traceback
         traceback.print_exc()
-        return 'Error', 500
+        return f'Error: {str(e)}', 500
 
 @app.route('/')
 def index():
@@ -67,6 +67,7 @@ if __name__ == '__main__':
     # Эта часть нужна только для локального запуска
 
     app.run()
+
 
 
 
