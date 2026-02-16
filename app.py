@@ -10,14 +10,21 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 
 # Токен берется из переменных окружения (так безопаснее!)
 TOKEN = os.environ.get('BOT_TOKEN')
-
 # Создаем приложение бота
 application = Application.builder().token(TOKEN).build()
 
-# Добавляем все твои обработчики (как в webhook.py)
-application.add_handler(CommandHandler("start", auto_collector_bot.start))
-application.add_handler(CommandHandler("drop", auto_collector_bot.drop))
-application.add_handler(CommandHandler("garage", auto_collector_bot.garage))
+# Инициализируем приложение (это важно!)
+import asyncio
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
+loop.run_until_complete(application.initialize())
+
+
+
+
+
+
+
 application.add_handler(CommandHandler("collection", auto_collector_bot.collection))
 application.add_handler(CommandHandler("top", auto_collector_bot.top))
 application.add_handler(CommandHandler("rarity", auto_collector_bot.rarity_info))
@@ -43,4 +50,5 @@ def index():
 
 if __name__ == '__main__':
     # Эта часть нужна только для локального запуска
+
     app.run()
