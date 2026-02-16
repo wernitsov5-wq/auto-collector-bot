@@ -47,24 +47,19 @@ def webhook():
         update = Update.de_json(request.get_json(force=True), application.bot)
         print(f"🔥 Получено обновление: {update}")
         
-        # СОЗДАЁМ СОБСТВЕННЫЙ EVENT LOOP
+        # СОЗДАЁМ И ЗАПУСКАЕМ EVENT LOOP
         import asyncio
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         
-        # ЗАПУСКАЕМ ЗАДАЧУ
-        loop.create_task(application.process_update(update))
+        # ЗАПУСКАЕМ ОБРАБОТКУ И ЖДЁМ РЕЗУЛЬТАТ
+        loop.run_until_complete(application.process_update(update))
         
-        # ДАЁМ ВРЕМЯ НА ВЫПОЛНЕНИЕ (опционально)
-        loop.call_later(0.1, lambda: None)
-        
-        print("🔥 Задача создана")
+        print("🔥 Обработка завершена")
         return 'OK', 200
         
     except Exception as e:
         print(f"❌ ОШИБКА: {e}")
-        import traceback
-        traceback.print_exc()
         return f'Error: {str(e)}', 500
 
 @app.route('/')
@@ -75,6 +70,7 @@ if __name__ == '__main__':
     # Эта часть нужна только для локального запуска
 
     app.run()
+
 
 
 
