@@ -377,9 +377,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"💎 /rarity - Редкости машин\n\n"
         f"🚗 *Все названия марок являются вымышленными*",
         parse_mode='Markdown'
-    )
+        
     
-    parse_mode='Markdown'
+    
     )
     
     # Считаем статистику
@@ -764,4 +764,5 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 
