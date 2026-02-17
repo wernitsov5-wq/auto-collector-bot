@@ -355,14 +355,14 @@ CARS_DATABASE = [
     {"id": "jag_e-pace", "brand": "Jagyar", "name": "E-Pace", "year": 2017, "rarity": "rare"},
     {"id": "jag_i-pace", "brand": "Jagyar", "name": "I-Pace", "year": 2018, "rarity": "legendary"},
 
-        # ===== BUGA (Буга — гиперкары) =====
+    # ===== BUGA (Буга — гиперкары) =====
     {"id": "buga_vintage", "brand": "Buga", "name": "Type 35", "year": 1924, "rarity": "classic"},
     {"id": "buga_classic", "brand": "Buga", "name": "Type 57 Atlantic", "year": 1936, "rarity": "legendary"},
     {"id": "buga_eb110", "brand": "Buga", "name": "EB110", "year": 1991, "rarity": "legendary"},
     {"id": "buga_veyron", "brand": "Buga", "name": "Veyron 16.4", "year": 2005, "rarity": "legendary"},
-    {"id": "buga_veyron_sport", "brand": "Bugga", "name": "Veyron Super Sport", "year": 2010, "rarity": "legendary"},
-    {"id": "buga_chiron", "brand": "Bugga", "name": "Chiron", "year": 2016, "rarity": "mythical"},
-    {"id": "buga_chiron_sport", "brand": "Bugga", "name": "Chiron Sport", "year": 2018, "rarity": "mythical"},
+    {"id": "buga_veyron_sport", "brand": "Buga", "name": "Veyron Super Sport", "year": 2010, "rarity": "legendary"},
+    {"id": "buga_chiron", "brand": "Buga", "name": "Chiron", "year": 2016, "rarity": "mythical"},
+    {"id": "buga_chiron_sport", "brand": "Buga", "name": "Chiron Sport", "year": 2018, "rarity": "mythical"},
     {"id": "buga_divo", "brand": "Buga", "name": "Divo", "year": 2018, "rarity": "mythical"},
     {"id": "buga_la_voiture", "brand": "Buga", "name": "La Voiture Noire", "year": 2019, "rarity": "mythical"},
     {"id": "buga_centodieci", "brand": "Buga", "name": "Centodieci", "year": 2019, "rarity": "mythical"},
@@ -832,6 +832,7 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 
 
 
