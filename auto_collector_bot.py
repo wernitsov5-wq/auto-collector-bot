@@ -286,19 +286,88 @@ CARS_DATABASE = [
     {"id": "ladda_vesta", "brand": "Ladda", "name": "Vesta", "year": 2015, "rarity": "rare"},
     {"id": "ladda_xray", "brand": "Ladda", "name": "XRAY", "year": 2015, "rarity": "rare"},
     
-    # ===== GAZ =====
-    {"id": "gaz_a", "brand": "GAZ", "name": "A", "year": 1932, "rarity": "classic"},
-    {"id": "gaz_m1", "brand": "GAZ", "name": "M-1", "year": 1936, "rarity": "classic"},
-    {"id": "gaz_12", "brand": "GAZ", "name": "12 ZIM", "year": 1949, "rarity": "legendary"},
-    {"id": "gaz_13", "brand": "GAZ", "name": "13 Chaika", "year": 1959, "rarity": "legendary"},
-    {"id": "gaz_14", "brand": "GAZ", "name": "14 Chaika", "year": 1977, "rarity": "legendary"},
-    {"id": "gaz_21", "brand": "GAZ", "name": "21 Volga", "year": 1956, "rarity": "epic"},
-    {"id": "gaz_22", "brand": "GAZ", "name": "22 Volga", "year": 1962, "rarity": "epic"},
-    {"id": "gaz_24", "brand": "GAZ", "name": "24 Volga", "year": 1968, "rarity": "epic"},
-    {"id": "gaz_3102", "brand": "GAZ", "name": "3102 Volga", "year": 1981, "rarity": "rare"},
-    {"id": "gaz_3110", "brand": "GAZ", "name": "3110 Volga", "year": 1997, "rarity": "common"},
-    {"id": "gaz_31105", "brand": "GAZ", "name": "31105 Volga", "year": 2004, "rarity": "common"},
-    {"id": "gaz_69", "brand": "GAZ", "name": "69", "year": 1953, "rarity": "epic"},
+    # ===== GAS =====
+    {"id": "gas_a", "brand": "GAS", "name": "A", "year": 1932, "rarity": "classic"},
+    {"id": "gas_m1", "brand": "GAS", "name": "M-1", "year": 1936, "rarity": "classic"},
+    {"id": "gas_12", "brand": "GAS", "name": "12 ZIM", "year": 1949, "rarity": "legendary"},
+    {"id": "gas_13", "brand": "GAS", "name": "13 Chaika", "year": 1959, "rarity": "legendary"},
+    {"id": "gas_14", "brand": "GAS", "name": "14 Chaika", "year": 1977, "rarity": "legendary"},
+    {"id": "gas_21", "brand": "GAS", "name": "21 Volga", "year": 1956, "rarity": "epic"},
+    {"id": "gas_22", "brand": "GAS", "name": "22 Volga", "year": 1962, "rarity": "epic"},
+    {"id": "gas_24", "brand": "GAS", "name": "24 Volga", "year": 1968, "rarity": "epic"},
+    {"id": "gas_3102", "brand": "GAS", "name": "3102 Volga", "year": 1981, "rarity": "rare"},
+    {"id": "gas_3110", "brand": "GAS", "name": "3110 Volga", "year": 1997, "rarity": "common"},
+    {"id": "gas_31105", "brand": "GAS", "name": "31105 Volga", "year": 2004, "rarity": "common"},
+    {"id": "gas_69", "brand": "GAS", "name": "69", "year": 1953, "rarity": "epic"},
+    
+        # ===== FOLKSVAGEN (бывший Volkswagen) =====
+    {"id": "folks_beetle", "brand": "Folksvagen", "name": "Beetle Classic", "year": 1938, "rarity": "classic"},
+    {"id": "folks_bus", "brand": "Folksvagen", "name": "Transporter T1", "year": 1950, "rarity": "classic"},
+    {"id": "folks_transporter_t5", "brand": "Folksvagen", "name": "transporter T5", "year": 2002, "rarity": "epic"},
+    {"id": "folks_golf_2", "brand": "Folksvagen", "name": "Golf II", "year": 1983, "rarity": "common"},
+    {"id": "folks_golf_3", "brand": "Folksvagen", "name": "Golf III", "year": 1991, "rarity": "common"},
+    {"id": "folks_golf_4", "brand": "Folksvagen", "name": "Golf IV", "year": 1997, "rarity": "rare"},
+    {"id": "folks_golf_5", "brand": "Folksvagen", "name": "Golf V", "year": 2003, "rarity": "common"},
+    {"id": "folks_golf_6", "brand": "Folksvagen", "name": "Golf VI", "year": 2008, "rarity": "rare"},
+    {"id": "folks_golf_7", "brand": "Folksvagen", "name": "Golf VII", "year": 2012, "rarity": "epic"},
+    {"id": "folks_golf_8", "brand": "Folksvagen", "name": "Golf VIII", "year": 2019, "rarity": "legendary"},
+    {"id": "folks_passat_b1", "brand": "Folksvagen", "name": "Passat B1", "year": 1973, "rarity": "classic"},
+    {"id": "folks_passat_b2", "brand": "Folksvagen", "name": "Passat B2", "year": 1980, "rarity": "common"},
+    {"id": "folks_passat_b3", "brand": "Folksvagen", "name": "Passat B3", "year": 1988, "rarity": "common"},
+    {"id": "folks_passat_b5", "brand": "Folksvagen", "name": "Passat B5", "year": 1996, "rarity": "common"},
+    {"id": "folks_passat_b6", "brand": "Folksvagen", "name": "Passat B6", "year": 2005, "rarity": "common"},
+    {"id": "folks_passat_b7", "brand": "Folksvagen", "name": "Passat B7", "year": 2010, "rarity": "rare"},
+    {"id": "folks_passat_b8", "brand": "Folksvagen", "name": "Passat B8", "year": 2014, "rarity": "epic"},
+    {"id": "folks_polo_1", "brand": "Folksvagen", "name": "Polo I", "year": 1975, "rarity": "classic"},
+    {"id": "folks_polo_3", "brand": "Folksvagen", "name": "Polo III GTI", "year": 1994, "rarity": "rare"},
+    {"id": "folks_polo_4", "brand": "Folksvagen", "name": "Polo IV", "year": 2001, "rarity": "rare"},
+    {"id": "folks_polo_5", "brand": "Folksvagen", "name": "Polo V", "year": 2009, "rarity": "epic"},
+    {"id": "folks_polo_6", "brand": "Folksvagen", "name": "Polo VI", "year": 2017, "rarity": "legendary"},
+    {"id": "folks_touareg_1", "brand": "Folksvagen", "name": "Touareg", "year": 2002, "rarity": "epic"},
+    {"id": "folks_touareg_2", "brand": "Folksvagen", "name": "Touareg II", "year": 2010, "rarity": "rare"},
+    {"id": "folks_touareg_3", "brand": "Folksvagen", "name": "Touareg III", "year": 2018, "rarity": "legendary"},
+    {"id": "folks_phaeton", "brand": "Folksvagen", "name": "Phaeton", "year": 2002, "rarity": "legendary"},
+    {"id": "folks_scirocco", "brand": "Folksvagen", "name": "Scirocco", "year": 1974, "rarity": "epic"},
+    {"id": "folks_corrado", "brand": "Folksvagen", "name": "Corrado", "year": 1988, "rarity": "epic"},
+    {"id": "folks_arteon", "brand": "Folksvagen", "name": "Arteon", "year": 2017, "rarity": "legendary"},
+
+        # ===== JAGYAR (Ягуар — хищник из семейства кошачьих) =====
+    {"id": "jag_ss100", "brand": "Jagyar", "name": "SS 100", "year": 1936, "rarity": "classic"},
+    {"id": "jag_xk120", "brand": "Jagyar", "name": "XK120", "year": 1948, "rarity": "legendary"},
+    {"id": "jag_xk140", "brand": "Jagyar", "name": "XK140", "year": 1954, "rarity": "epic"},
+    {"id": "jag_xk150", "brand": "Jagyar", "name": "XK150", "year": 1957, "rarity": "epic"},
+    {"id": "jag_e-type", "brand": "Jagyar", "name": "E-Type", "year": 1961, "rarity": "mythical"},
+    {"id": "jag_mk2", "brand": "Jagyar", "name": "Mark 2", "year": 1959, "rarity": "classic"},
+    {"id": "jag_xj6", "brand": "Jagyar", "name": "XJ6 Series I", "year": 1968, "rarity": "classic"},
+    {"id": "jag_xj12", "brand": "Jagyar", "name": "XJ12", "year": 1972, "rarity": "classic"},
+    {"id": "jag_xjs", "brand": "Jagyar", "name": "XJ-S", "year": 1975, "rarity": "rare"},
+    {"id": "jag_xj220", "brand": "Jagyar", "name": "XJ220", "year": 1992, "rarity": "mythical"},
+    {"id": "jag_xk8", "brand": "Jagyar", "name": "XK8", "year": 1996, "rarity": "rare"},
+    {"id": "jag_xkr", "brand": "Jagyar", "name": "XKR", "year": 1998, "rarity": "epic"},
+    {"id": "jag_s-type", "brand": "Jagyar", "name": "S-Type", "year": 1999, "rarity": "common"},
+    {"id": "jag_x-type", "brand": "Jagyar", "name": "X-Type", "year": 2001, "rarity": "common"},
+    {"id": "jag_xj_x350", "brand": "Jagyar", "name": "XJ (X350)", "year": 2003, "rarity": "rare"},
+    {"id": "jag_xf", "brand": "Jagyar", "name": "XF", "year": 2007, "rarity": "rare"},
+    {"id": "jag_xj_x351", "brand": "Jagyar", "name": "XJ (X351)", "year": 2009, "rarity": "epic"},
+    {"id": "jag_f-type", "brand": "Jagyar", "name": "F-Type", "year": 2013, "rarity": "legendary"},
+    {"id": "jag_xe", "brand": "Jagyar", "name": "XE", "year": 2014, "rarity": "rare"},
+    {"id": "jag_f-pace", "brand": "Jagyar", "name": "F-Pace", "year": 2016, "rarity": "epic"},
+    {"id": "jag_e-pace", "brand": "Jagyar", "name": "E-Pace", "year": 2017, "rarity": "rare"},
+    {"id": "jag_i-pace", "brand": "Jagyar", "name": "I-Pace", "year": 2018, "rarity": "legendary"}
+
+        # ===== BUGA (Буга — гиперкары) =====
+    {"id": "buga_vintage", "brand": "Buga", "name": "Type 35", "year": 1924, "rarity": "classic"},
+    {"id": "buga_classic", "brand": "Buga", "name": "Type 57 Atlantic", "year": 1936, "rarity": "legendary"},
+    {"id": "buga_eb110", "brand": "Buga", "name": "EB110", "year": 1991, "rarity": "legendary"},
+    {"id": "buga_veyron", "brand": "Buga", "name": "Veyron 16.4", "year": 2005, "rarity": "legendary"},
+    {"id": "buga_veyron_sport", "brand": "Bugga", "name": "Veyron Super Sport", "year": 2010, "rarity": "legendary"},
+    {"id": "buga_chiron", "brand": "Bugga", "name": "Chiron", "year": 2016, "rarity": "mythical"},
+    {"id": "buga_chiron_sport", "brand": "Bugga", "name": "Chiron Sport", "year": 2018, "rarity": "mythical"},
+    {"id": "buga_divo", "brand": "Buga", "name": "Divo", "year": 2018, "rarity": "mythical"},
+    {"id": "buga_la_voiture", "brand": "Buga", "name": "La Voiture Noire", "year": 2019, "rarity": "mythical"},
+    {"id": "buga_centodieci", "brand": "Buga", "name": "Centodieci", "year": 2019, "rarity": "mythical"},
+    {"id": "buga_mistral", "brand": "Buga", "name": "Mistral", "year": 2022, "rarity": "mythical"},
+    {"id": "buga_tourbillon", "brand": "Buga", "name": "Tourbillon", "year": 2024, "rarity": "mythical"},
 ]
 
 # Редкости и их шансы
@@ -763,6 +832,7 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 
 
 
