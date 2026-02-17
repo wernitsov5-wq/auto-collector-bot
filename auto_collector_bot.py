@@ -353,7 +353,7 @@ CARS_DATABASE = [
     {"id": "jag_xe", "brand": "Jagyar", "name": "XE", "year": 2014, "rarity": "rare"},
     {"id": "jag_f-pace", "brand": "Jagyar", "name": "F-Pace", "year": 2016, "rarity": "epic"},
     {"id": "jag_e-pace", "brand": "Jagyar", "name": "E-Pace", "year": 2017, "rarity": "rare"},
-    {"id": "jag_i-pace", "brand": "Jagyar", "name": "I-Pace", "year": 2018, "rarity": "legendary"}
+    {"id": "jag_i-pace", "brand": "Jagyar", "name": "I-Pace", "year": 2018, "rarity": "legendary"},
 
         # ===== BUGA (Буга — гиперкары) =====
     {"id": "buga_vintage", "brand": "Buga", "name": "Type 35", "year": 1924, "rarity": "classic"},
@@ -367,7 +367,7 @@ CARS_DATABASE = [
     {"id": "buga_la_voiture", "brand": "Buga", "name": "La Voiture Noire", "year": 2019, "rarity": "mythical"},
     {"id": "buga_centodieci", "brand": "Buga", "name": "Centodieci", "year": 2019, "rarity": "mythical"},
     {"id": "buga_mistral", "brand": "Buga", "name": "Mistral", "year": 2022, "rarity": "mythical"},
-    {"id": "buga_tourbillon", "brand": "Buga", "name": "Tourbillon", "year": 2024, "rarity": "mythical"},
+    {"id": "buga_tourbillon", "brand": "Buga", "name": "Tourbillon", "year": 2024, "rarity": "mythical"}
 ]
 
 # Редкости и их шансы
@@ -832,6 +832,7 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 
 
 
