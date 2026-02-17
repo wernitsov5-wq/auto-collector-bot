@@ -7,6 +7,7 @@ import pymongo
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 from datetime import datetime, timedelta
+from bson.objectid import ObjectId
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     Application,
@@ -522,32 +523,26 @@ async def garage(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text(text, parse_mode='Markdown')
 
-# ===== КОЛЛЕКЦИЯ (ДЕТАЛЬНО) =====
+# ===== КОЛЛЕКЦИЯ =====
 async def collection(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
-    
-    conn = sqlite3.connect('auto_collector.db')
-    c = conn.cursor()
-    
-    # Получаем все машины
-    c.execute("SELECT car_brand, car_name, car_year, car_rarity, car_id FROM garage WHERE user_id=? ORDER BY car_rarity DESC, car_brand", (user_id,))
-    cars = c.fetchall()
-    
-    # Статистика по редкостям
-    rarity_counts = {rarity: 0 for rarity in RARITY_WEIGHTS.keys()}
-    
-    for car in cars:
-        rarity_counts[car[3]] = rarity_counts.get(car[3], 0) + 1
-    
-    conn.close()
-    
+
+    # Получаем все машины пользователя из MongoDB
+    cars = list(garage_collection.find(
+        {"user_id": user_id},
+        {"_id": 0, "car_brand": 1, "car_name": 1, "car_year": 1, "car_rarity": 1, "car_id": 1}
+    ).sort("acquired_date", -1))
+
     if not cars:
         await update.message.reply_text("📊 Коллекция пуста!")
         return
-    
-    text = "📊 **ДЕТАЛЬНАЯ КОЛЛЕКЦИЯ** 📊\n\n"
-    
+
     # Статистика по редкостям
+    rarity_counts = {"common": 0, "rare": 0, "epic": 0, "legendary": 0, "classic": 0, "mythical": 0}
+    for car in cars:
+        rarity_counts[car["car_rarity"]] = rarity_counts.get(car["car_rarity"], 0) + 1
+
+    text = "📊 **ДЕТАЛЬНАЯ КОЛЛЕКЦИЯ** 📊\n\n"
     text += "**Статистика:**\n"
     for rarity, count in rarity_counts.items():
         if count > 0:
@@ -556,40 +551,39 @@ async def collection(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "common": "Обычные",
                 "rare": "Редкие",
                 "epic": "Эпические",
-                "classic": "Классические",
                 "legendary": "Легендарные",
+                "classic": "Классические",
                 "mythical": "Мифические"
             }.get(rarity, rarity)
             text += f"{rarity_emoji} {rarity_text}: {count}\n"
-    
+
     text += f"\n**Всего машин:** {len(cars)}\n\n"
-    
-    # Последние 10 машин
     text += "**Последние машины:**\n"
     for car in cars[:10]:
-        rarity_emoji = RARITY_EMOJI.get(car[3], "⚪")
-        text += f"{rarity_emoji} {car[0]} {car[1]} ({car[2]}) — ID: `{car[4]}`\n"
-    
+        rarity_emoji = RARITY_EMOJI.get(car["car_rarity"], "⚪")
+        text += f"{rarity_emoji} {car['car_brand']} {car['car_name']} ({car['car_year']}) — ID: `{car['car_id']}`\n"
+
     await update.message.reply_text(text, parse_mode='Markdown')
 
 # ===== ТОП КОЛЛЕКЦИОНЕРОВ =====
 async def top(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    conn = sqlite3.connect('auto_collector.db')
-    c = conn.cursor()
-    
-    c.execute("SELECT username, total_cars FROM users ORDER BY total_cars DESC LIMIT 10")
-    top_users = c.fetchall()
-    conn.close()
-    
+    # Получаем топ-10 игроков по total_cars из MongoDB
+    top_users = list(users_collection.find(
+        {},
+        {"_id": 0, "username": 1, "total_cars": 1}
+    ).sort("total_cars", -1).limit(10))
+
     if not top_users:
         await update.message.reply_text("🏆 Топ пока пуст!")
         return
-    
+
     text = "🏆 **ТОП КОЛЛЕКЦИОНЕРОВ** 🏆\n\n"
-    for i, (username, total) in enumerate(top_users, 1):
+    for i, user in enumerate(top_users, 1):
+        username = user.get("username", "Аноним")
+        total = user.get("total_cars", 0)
         medal = "🥇" if i == 1 else "🥈" if i == 2 else "🥉" if i == 3 else f"{i}."
-        text += f"{medal} @{username or 'Аноним'} — {total} машин\n"
-    
+        text += f"{medal} @{username} — {total} машин\n"
+
     await update.message.reply_text(text, parse_mode='Markdown')
 
 # ===== РЕДКОСТИ =====
@@ -608,7 +602,8 @@ async def rarity_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ===== ТРЕЙД (ОБМЕН) =====
 async def trade(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
-    
+    username = update.effective_user.username or update.effective_user.first_name
+
     if len(context.args) < 2:
         await update.message.reply_text(
             "🤝 **ТРЕЙД** 🤝\n\n"
@@ -617,57 +612,54 @@ async def trade(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "Чтобы найти ID машины, используй /collection"
         )
         return
-    
+
     target_username = context.args[0].replace('@', '')
     car_id = context.args[1]
-    
-    conn = sqlite3.connect('auto_collector.db')
-    c = conn.cursor()
-    
+
     # Проверяем, есть ли у пользователя такая машина
-    c.execute("SELECT * FROM garage WHERE user_id=? AND car_id=?", (user_id, car_id))
-    car = c.fetchone()
-    
+    car = garage_collection.find_one({"user_id": user_id, "car_id": car_id})
+
     if not car:
         await update.message.reply_text("❌ У тебя нет такой машины!")
-        conn.close()
         return
-    
+
     # Ищем целевого пользователя
-    c.execute("SELECT user_id FROM users WHERE username=?", (target_username,))
-    target = c.fetchone()
-    
-    if not target:
+    target_user = users_collection.find_one({"username": target_username})
+
+    if not target_user:
         await update.message.reply_text(f"❌ Пользователь @{target_username} не найден!")
-        conn.close()
         return
-    
-    target_id = target[0]
-    
+
+    target_id = target_user["user_id"]
+
     if target_id == user_id:
         await update.message.reply_text("❌ Нельзя трейдить сам с собой!")
-        conn.close()
         return
-    
+
     # Создаем трейд
-    c.execute("INSERT INTO trades (user1_id, user2_id, user1_car_id, created_at) VALUES (?, ?, ?, ?)",
-              (user_id, target_id, car[0], datetime.now()))
-    trade_id = c.lastrowid
-    conn.commit()
-    conn.close()
-    
+    trade_data = {
+        "user1_id": user_id,
+        "user2_id": target_id,
+        "user1_car_id": car["car_id"],
+        "user2_car_id": None,
+        "status": "pending",
+        "created_at": datetime.now()
+    }
+    trade_result = trades_collection.insert_one(trade_data)
+    trade_id = trade_result.inserted_id
+
     # Кнопки для принятия/отказа
     keyboard = [
         [InlineKeyboardButton("✅ Принять", callback_data=f"accept_trade_{trade_id}")],
         [InlineKeyboardButton("❌ Отказать", callback_data=f"reject_trade_{trade_id}")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    
+
     await update.message.reply_text(
         f"🤝 **ТРЕЙД ПРЕДЛОЖЕН** 🤝\n\n"
-        f"От: @{update.effective_user.username or 'Игрок'}\n"
+        f"От: @{username}\n"
         f"Кому: @{target_username}\n"
-        f"Машина: {car[3]} {car[4]} ({car[5]}) — {car[6]}\n\n"
+        f"Машина: {car['car_brand']} {car['car_name']} ({car['car_year']}) — {car['car_rarity']}\n\n"
         f"@{target_username}, прими или отклони предложение!",
         reply_markup=reply_markup
     )
@@ -676,58 +668,58 @@ async def trade(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-    
+
     data = query.data
     user_id = query.from_user.id
     username = query.from_user.username or query.from_user.first_name
-    
+
     if data.startswith("accept_trade_"):
-        trade_id = int(data.replace("accept_trade_", ""))
-        
-        conn = sqlite3.connect('auto_collector.db')
-        c = conn.cursor()
-        
+        trade_id = data.replace("accept_trade_", "")
+
         # Получаем информацию о трейде
-        c.execute("SELECT * FROM trades WHERE trade_id=? AND status='pending'", (trade_id,))
-        trade = c.fetchone()
-        
+        trade = trades_collection.find_one({"_id": ObjectId(trade_id), "status": "pending"})
+
         if not trade:
             await query.edit_message_text("❌ Трейд уже неактивен!")
-            conn.close()
             return
-        
-        trade_id, user1_id, user2_id, user1_car_id, user2_car_id, status, created_at = trade
-        
+
         # Проверяем, что принимает правильный пользователь
-        if user_id != user2_id:
+        if user_id != trade["user2_id"]:
             await query.edit_message_text("❌ Это не твой трейд!")
-            conn.close()
             return
-        
+
         # Получаем информацию о машине
-        c.execute("SELECT * FROM garage WHERE id=?", (user1_car_id,))
-        car1 = c.fetchone()
-        
+        car = garage_collection.find_one({"user_id": trade["user1_id"], "car_id": trade["user1_car_id"]})
+
+        if not car:
+            await query.edit_message_text("❌ Машина уже не доступна!")
+            return
+
         # Обмениваемся машинами
-        c.execute("UPDATE garage SET user_id=? WHERE id=?", (user2_id, user1_car_id))
-        c.execute("UPDATE trades SET status='completed' WHERE trade_id=?", (trade_id,))
-        conn.commit()
-        conn.close()
-        
+        garage_collection.update_one(
+            {"user_id": trade["user1_id"], "car_id": trade["user1_car_id"]},
+            {"$set": {"user_id": trade["user2_id"]}}
+        )
+
+        # Обновляем статус трейда
+        trades_collection.update_one(
+            {"_id": ObjectId(trade_id)},
+            {"$set": {"status": "completed"}}
+        )
+
         await query.edit_message_text(
             f"✅ **ТРЕЙД ЗАВЕРШЕН!**\n\n"
-            f"Машина {car1[3]} {car1[4]} ({car1[5]}) передана @{username}!"
+            f"Машина {car['car_brand']} {car['car_name']} передана @{username}!"
         )
-    
+
     elif data.startswith("reject_trade_"):
-        trade_id = int(data.replace("reject_trade_", ""))
-        
-        conn = sqlite3.connect('auto_collector.db')
-        c = conn.cursor()
-        c.execute("UPDATE trades SET status='rejected' WHERE trade_id=?", (trade_id,))
-        conn.commit()
-        conn.close()
-        
+        trade_id = data.replace("reject_trade_", "")
+
+        trades_collection.update_one(
+            {"_id": ObjectId(trade_id)},
+            {"$set": {"status": "rejected"}}
+        )
+
         await query.edit_message_text("❌ Трейд отклонен.")
 
 # ===== ЗАПУСК БОТА =====
@@ -771,6 +763,7 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 
 
 
