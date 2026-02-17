@@ -1,8 +1,11 @@
 import logging
 import random
-import sqlite3
 import asyncio
 import json
+import os
+import pymongo
+from pymongo.mongo_client import MongoClient
+from pymongo.server_api import ServerApi
 from datetime import datetime, timedelta
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
@@ -21,45 +24,28 @@ BOT_TOKEN = "8497826192:AAEmAD4VD3j0yKbnp4PILTjW-sASS0cx5EU"
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# ===== БАЗА ДАННЫХ =====
-def init_database():
-    conn = sqlite3.connect('auto_collector.db')
-    c = conn.cursor()
+
     
-    # Таблица пользователей
-    c.execute('''CREATE TABLE IF NOT EXISTS users
-                 (user_id INTEGER PRIMARY KEY,
-                  username TEXT,
-                  first_name TEXT,
-                  credits INTEGER DEFAULT 100,
-                  last_drop TIMESTAMP,
-                  total_cars INTEGER DEFAULT 0,
-                  joined_date TIMESTAMP)''')
-    
-    # Таблица машин в гараже
-    c.execute('''CREATE TABLE IF NOT EXISTS garage
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  user_id INTEGER,
-                  car_id TEXT,
-                  car_name TEXT,
-                  car_brand TEXT,
-                  car_year INTEGER,
-                  car_rarity TEXT,
-                  acquired_date TIMESTAMP,
-                  UNIQUE(user_id, car_id))''')
-    
-    # Таблица для трейдов
-    c.execute('''CREATE TABLE IF NOT EXISTS trades
-                 (trade_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  user1_id INTEGER,
-                  user2_id INTEGER,
-                  user1_car_id INTEGER,
-                  user2_car_id INTEGER,
-                  status TEXT DEFAULT 'pending',
-                  created_at TIMESTAMP)''')
-    
-    conn.commit()
-    conn.close()
+    # ===== ПОДКЛЮЧЕНИЕ К MONGODB ATLAS =====
+MONGO_URI = os.environ.get("MONGO_URI")
+if not MONGO_URI:
+    raise ValueError("❌ MONGO_URI не найден в переменных окружения! Добавь его в Render.")
+
+# Подключаемся
+client = MongoClient(MONGO_URI, server_api=ServerApi('1'))
+db = client['auto_collector_db']  # имя базы данных
+
+# Коллекции (они как таблицы в SQL)
+users_collection = db['users']
+garage_collection = db['garage']
+trades_collection = db['trades']
+
+# Проверка соединения
+try:
+    client.admin.command('ping')
+    print("✅ Подключено к MongoDB Atlas!")
+except Exception as e:
+    print(f"❌ Ошибка подключения к MongoDB: {e}")
 
 # ===== ОГРОМНАЯ БАЗА АВТОМОБИЛЕЙ (200+ МАШИН) =====
 CARS_DATABASE = [
@@ -355,31 +341,42 @@ def get_random_car():
 # ===== КОМАНДА СТАРТ =====
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
+    user_id = user.id
+    username = user.username or user.first_name
 
-    conn = sqlite3.connect('auto_collector.db')
-    c = conn.cursor()
-    c.execute("INSERT OR IGNORE INTO users (user_id, username, first_name, joined_date, last_drop) VALUES (?, ?, ?, ?, ?)",
-              (user.id, user.username, user.first_name, datetime.now(), datetime.now() - timedelta(minutes=6)))
-    conn.commit()
-    conn.close()
+    # Данные нового игрока
+    user_data = {
+        "user_id": user_id,
+        "username": username,
+        "first_name": user.first_name,
+        "credits": 100,
+        "total_cars": 0,
+        "last_drop": datetime.now() - timedelta(minutes=6),
+        "joined_date": datetime.now()
+    }
 
-    # ОТПРАВЛЯЕМ ПРИВЕТСТВИЕ
+    # В MongoDB вместо INSERT OR IGNORE используем update_one с upsert=True
+    # Это значит: найти пользователя по user_id. Если нет — создать (upsert), если есть — не трогать ($setOnInsert).
+    users_collection.update_one(
+        {"user_id": user_id},
+        {"$setOnInsert": user_data},
+        upsert=True
+    )
+
+    # Отправляем приветствие
     await update.message.reply_text(
         f"🚗 **AUTO COLLECTOR** 🚗\n\n"
         f"Привет, {user.first_name}!\n"
         f"💰 Кредитов: 100\n\n"
-        f"**КОМАНДЫ:**\n"
-        f"🎲 /drop - Получить машину (каждые 5 мин)\n"
-        f"🚘 /garage - Мой гараж\n"
-        f"📊 /collection - Статистика коллекции\n"
-        f"🤝 /trade @user [id] - Обмен с друзьями\n"
-        f"🏆 /top - Топ коллекционеров\n"
-        f"💎 /rarity - Редкости машин\n\n"
-        f"🚗 *Все названия марок являются вымышленными*",
+        "**КОМАНДЫ:**\n"
+        "🎲 /drop - Получить машину (каждые 5 мин)\n"
+        "🚘 /garage - Мой гараж\n"
+        "📊 /collection - Статистика коллекции\n"
+        "🤝 /trade @user [id] - Обмен с друзьями\n"
+        "🏆 /top - Топ коллекционеров\n"
+        "💎 /rarity - Редкости машин\n\n"
+        "🚗 *Все названия марок являются вымышленными*",
         parse_mode='Markdown'
-        
-    
-    
     )
     
     # Считаем статистику
@@ -412,43 +409,55 @@ async def test(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def drop(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     username = update.effective_user.username or update.effective_user.first_name
-    
-    conn = sqlite3.connect('auto_collector.db')
-    c = conn.cursor()
-    
-    # Проверяем время последнего дропа
-    c.execute("SELECT last_drop FROM users WHERE user_id=?", (user_id,))
-    result = c.fetchone()
-    
-    if not result:
+
+    # Получаем пользователя из MongoDB
+    user = users_collection.find_one({"user_id": user_id})
+
+    if not user:
         await update.message.reply_text("❌ Сначала зарегистрируйся через /start")
-        conn.close()
         return
-    
-    last_drop = datetime.fromisoformat(result[0])
+
+    # Проверяем время последнего дропа
+    last_drop = user.get("last_drop")
     now = datetime.now()
-    
-    # Проверяем, прошло ли 5 минут (300 секунд)
-    if (now - last_drop).total_seconds() < 300:
-        time_left = 300 - (now - last_drop).total_seconds()
-        minutes = int(time_left // 60)
-        seconds = int(time_left % 60)
-        await update.message.reply_text(f"⏳ Подожди {minutes} мин {seconds} сек до следующего дропа!")
-        conn.close()
-        return
-    
+
+    if last_drop:
+        # Если last_drop хранится как строка (ISO), преобразуем
+        if isinstance(last_drop, str):
+            last_drop = datetime.fromisoformat(last_drop)
+
+        # Проверяем, прошло ли 5 минут
+        if (now - last_drop).total_seconds() < 300:
+            time_left = 300 - (now - last_drop).total_seconds()
+            minutes = int(time_left // 60)
+            seconds = int(time_left % 60)
+            await update.message.reply_text(f"⏳ Подожди {minutes} мин {seconds} сек до следующего дропа!")
+            return
+
     # Получаем случайную машину
     car = get_random_car()
-    
-    # Добавляем в гараж
-    c.execute("INSERT INTO garage (user_id, car_id, car_name, car_brand, car_year, car_rarity, acquired_date) VALUES (?, ?, ?, ?, ?, ?, ?)",
-              (user_id, car["id"], car["name"], car["brand"], car["year"], car["rarity"], now))
-    
-    # Обновляем время дропа и счетчик машин
-    c.execute("UPDATE users SET last_drop=?, total_cars=total_cars+1 WHERE user_id=?", (now, user_id))
-    conn.commit()
-    conn.close()
-    
+
+    # Сохраняем машину в гараж (MongoDB)
+    car_data = {
+        "user_id": user_id,
+        "car_id": car["id"],
+        "car_name": car["name"],
+        "car_brand": car["brand"],
+        "car_year": car["year"],
+        "car_rarity": car["rarity"],
+        "acquired_date": now
+    }
+    garage_collection.insert_one(car_data)
+
+    # Обновляем время дропа и счётчик машин у пользователя
+    users_collection.update_one(
+        {"user_id": user_id},
+        {
+            "$set": {"last_drop": now},
+            "$inc": {"total_cars": 1}
+        }
+    )
+
     # Эмодзи для редкости
     rarity_emoji = RARITY_EMOJI.get(car["rarity"], "⚪")
     rarity_text = {
@@ -459,7 +468,7 @@ async def drop(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "legendary": "Легендарная",
         "mythical": "Мифическая"
     }.get(car["rarity"], car["rarity"])
-    
+
     await update.message.reply_text(
         f"🎉 **ТЫ ПОЛУЧИЛ МАШИНУ!** 🎉\n\n"
         f"🚗 **{car['brand']} {car['name']}**\n"
@@ -470,50 +479,47 @@ async def drop(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"Следующий дроп через 5 минут.",
         parse_mode='Markdown'
     )
-
+    
 # ===== ГАРАЖ =====
 async def garage(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
-    
-    conn = sqlite3.connect('auto_collector.db')
-    c = conn.cursor()
-    
-    # Получаем все машины пользователя
-    c.execute("SELECT car_brand, car_name, car_year, car_rarity, car_id FROM garage WHERE user_id=? ORDER BY acquired_date DESC", (user_id,))
-    cars = c.fetchall()
-    
-    # Получаем статистику
-    c.execute("SELECT total_cars FROM users WHERE user_id=?", (user_id,))
-    total = c.fetchone()[0]
-    
-    conn.close()
-    
+
+    # Получаем все машины пользователя из MongoDB
+    cars = list(garage_collection.find(
+        {"user_id": user_id},
+        {"_id": 0, "car_brand": 1, "car_name": 1, "car_year": 1, "car_rarity": 1, "car_id": 1}
+    ).sort("acquired_date", -1))
+
+    # Получаем статистику пользователя
+    user = users_collection.find_one({"user_id": user_id})
+    total_cars = user.get("total_cars", 0) if user else 0
+
     if not cars:
         await update.message.reply_text("🚘 Твой гараж пуст! Используй /drop, чтобы получить машину.")
         return
-    
+
     # Группируем по брендам
     brands = {}
     for car in cars:
-        brand = car[0]
+        brand = car["car_brand"]
         if brand not in brands:
             brands[brand] = []
         brands[brand].append(car)
-    
+
     text = f"🚘 **ТВОЙ ГАРАЖ** 🚘\n\n"
-    text += f"📊 Всего машин: {total}\n\n"
-    
+    text += f"📊 Всего машин: {total_cars}\n\n"
+
     for brand, brand_cars in brands.items():
         text += f"**{brand}** ({len(brand_cars)}):\n"
-        for car in brand_cars[:5]:  # Показываем первые 5 каждой марки
-            rarity_emoji = RARITY_EMOJI.get(car[3], "⚪")
-            text += f"{rarity_emoji} {car[1]} ({car[2]})\n"
+        for car in brand_cars[:5]:
+            rarity_emoji = RARITY_EMOJI.get(car["car_rarity"], "⚪")
+            text += f"{rarity_emoji} {car['car_name']} ({car['car_year']})\n"
         if len(brand_cars) > 5:
             text += f"... и еще {len(brand_cars) - 5}\n"
         text += "\n"
-    
+
     text += "🔍 Для детального просмотра используй /collection"
-    
+
     await update.message.reply_text(text, parse_mode='Markdown')
 
 # ===== КОЛЛЕКЦИЯ (ДЕТАЛЬНО) =====
@@ -765,6 +771,7 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 
 
 
