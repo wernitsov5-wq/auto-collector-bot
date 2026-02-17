@@ -32,7 +32,6 @@ application.add_handler(CommandHandler("rarity", auto_collector_bot.rarity_info)
 application.add_handler(CommandHandler("trade", auto_collector_bot.trade))
 
 # Инициализируем базу данных (Render даст нам постоянное хранилище)
-auto_collector_bot.init_database()
 
 # Flask-приложение для приема веб-хуков
 app = Flask(__name__)
@@ -70,6 +69,7 @@ if __name__ == '__main__':
     # Эта часть нужна только для локального запуска
 
     app.run()
+
 
 
 
