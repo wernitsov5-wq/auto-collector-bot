@@ -928,7 +928,7 @@ await update.message.reply_text(...)
 print(f"🔥 Ответ отправлен")
 
     # Отправляем уведомление в группу
-    try:
+     try:
         await context.bot.send_message(
             group_id,
             f"🎁 **Сюрприз!** 🎁\n\n"
@@ -1207,6 +1207,7 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 
 
 
