@@ -738,6 +738,102 @@ async def trade(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=reply_markup
     )
     
+    # ===== АДМИНСКАЯ КОМАНДА: ЗАРЕЗЕРВИРОВАТЬ ДРОП =====
+async def setdrop(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Команда для админа: /setdrop @username car_id
+    Пример: /setdrop @Vasya bmw_m3_f80
+    """
+    user_id = update.effective_user.id
+    
+    # Проверяем, админ ли
+    if user_id not in ADMIN_IDS:
+        await update.message.reply_text("❌ Эта команда только для админов!")
+        return
+    
+    # Проверяем формат команды
+    if len(context.args) < 2:
+        await update.message.reply_text(
+            "❌ Неправильный формат!\n"
+            "Используй: /setdrop @username car_id\n"
+            "Пример: /setdrop @Vasya bmw_m3_f80"
+        )
+        return
+    
+    target_username = context.args[0].replace('@', '')
+    car_id = context.args[1]
+    
+    # Проверяем, существует ли такая машина
+    car = None
+    for c in CARS_DATABASE:
+        if c["id"] == car_id:
+            car = c
+            break
+    
+    if not car:
+        await update.message.reply_text(f"❌ Машина с ID '{car_id}' не найдена!\n"
+                                        f"Используй /admin_listcars для просмотра ID")
+        return
+    
+    # Ищем пользователя в базе
+    conn = sqlite3.connect('auto_collector.db')
+    c = conn.cursor()
+    
+    # Сначала по username
+    c.execute("SELECT user_id, group_id, username FROM players WHERE username=?", (target_username,))
+    target = c.fetchone()
+    
+    if not target:
+        # Если нет, пробуем по first_name
+        c.execute("SELECT user_id, group_id, username FROM players WHERE first_name=?", (target_username,))
+        target = c.fetchone()
+    
+    if not target:
+        await update.message.reply_text(f"❌ Игрок @{target_username} не найден в базе!")
+        conn.close()
+        return
+    
+    target_id, group_id, username = target
+    
+    # Проверяем, нет ли уже активного резерва
+    c.execute("SELECT id FROM reserved_drops WHERE user_id=? AND status='pending'", (target_id,))
+    existing = c.fetchone()
+    
+    if existing:
+        await update.message.reply_text(
+            f"⚠️ У игрока @{username} уже есть зарезервированный дроп!\n"
+            f"Сначала он должен его активировать через /drop"
+        )
+        conn.close()
+        return
+    
+    # Сохраняем резерв
+    now = datetime.now()
+    c.execute('''INSERT INTO reserved_drops 
+                 (user_id, car_id, created_by, created_at, status) 
+                 VALUES (?, ?, ?, ?, 'pending')''',
+              (target_id, car_id, user_id, now))
+    
+    conn.commit()
+    conn.close()
+    
+    # Эмодзи для редкости
+    rarity_emoji = RARITY_EMOJI.get(car["rarity"], "⚪")
+    rarity_text = {
+        "common": "Обычная", "rare": "Редкая", "epic": "Эпическая",
+        "legendary": "Легендарная", "classic": "Классическая", "mythical": "Мифическая"
+    }.get(car["rarity"], car["rarity"])
+    
+    await update.message.reply_text(
+        f"✅ **Дроп зарезервирован!**\n\n"
+        f"👤 Игрок: @{username}\n"
+        f"🚗 Машина: **{car['brand']} {car['name']}**\n"
+        f"{rarity_emoji} Редкость: {rarity_text}\n\n"
+        f"📌 Когда игрок введёт /drop, он получит эту машину.\n"
+        f"🤫 Он не узнает, что это был ты!",
+        parse_mode='Markdown'
+    )
+    
     # ===== АДМИНСКАЯ КОМАНДА: ВЫДАТЬ МАШИНУ =====
 async def admin_give(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
@@ -1057,6 +1153,7 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 
 
 
