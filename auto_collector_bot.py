@@ -18,6 +18,11 @@ from telegram.ext import (
     ContextTypes,
 )
 
+# ===== АДМИНЫ (впиши свои ID) =====
+# Узнать свой ID можно у @userinfobot
+ADMIN_IDS = [1911945305]  # 👈 ВСТАВЬ СВОЙ TELEGRAM ID!
+# Если админов несколько, можно добавить через запятую: [123456, 789012]
+
 # ===== ТВОЙ ТОКЕН =====
 BOT_TOKEN = "8497826192:AAEmAD4VD3j0yKbnp4PILTjW-sASS0cx5EU"
 
@@ -732,6 +737,223 @@ async def trade(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"@{target_username}, прими или отклони предложение!",
         reply_markup=reply_markup
     )
+    
+    # ===== АДМИНСКАЯ КОМАНДА: ВЫДАТЬ МАШИНУ =====
+async def admin_give(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Команда для админа: /admin_give @username car_id
+    Пример: /admin_give @Vasya bmw_m3_f80
+    """
+    user_id = update.effective_user.id
+    
+    # Проверяем, админ ли
+    if user_id not in ADMIN_IDS:
+        await update.message.reply_text("❌ Эта команда только для админов!")
+        return
+    
+    # Проверяем формат команды
+    if len(context.args) < 2:
+        await update.message.reply_text(
+            "❌ Неправильный формат!\n"
+            "Используй: /admin_give @username car_id\n"
+            "Пример: /admin_give @Vasya bmw_m3_f80"
+        )
+        return
+    
+    target_username = context.args[0].replace('@', '')
+    car_id = context.args[1]
+    
+    # Проверяем, существует ли такая машина
+    car = None
+    for c in CARS_DATABASE:
+        if c["id"] == car_id:
+            car = c
+            break
+    
+    if not car:
+        await update.message.reply_text(f"❌ Машина с ID '{car_id}' не найдена!")
+        return
+    
+    # Ищем пользователя в базе по username
+    conn = sqlite3.connect('auto_collector.db')
+    c = conn.cursor()
+    
+    # Сначала ищем username
+    c.execute("SELECT user_id, group_id FROM players WHERE username=?", (target_username,))
+    target = c.fetchone()
+    
+    if not target:
+        # Если нет, ищем по first_name
+        c.execute("SELECT user_id, group_id FROM players WHERE first_name=?", (target_username,))
+        target = c.fetchone()
+    
+    if not target:
+        await update.message.reply_text(f"❌ Игрок @{target_username} не найден в базе!")
+        conn.close()
+        return
+    
+    target_id, group_id = target
+    
+    # Добавляем машину в гараж
+    now = datetime.now()
+    c.execute('''INSERT INTO garage 
+                 (user_id, car_id, car_name, car_brand, car_year, car_rarity, acquired_date, source) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+              (target_id, car["id"], car["name"], car["brand"], car["year"], 
+               car["rarity"], now, "admin_gift"))
+    
+    # Обновляем статистику
+    c.execute("UPDATE users SET total_cars = total_cars + 1 WHERE user_id=?", (target_id,))
+    
+    conn.commit()
+    conn.close()
+    
+    # Уведомление админу
+    rarity_emoji = RARITY_EMOJI.get(car["rarity"], "⚪")
+    rarity_text = {
+        "common": "Обычная", "rare": "Редкая", "epic": "Эпическая",
+        "legendary": "Легендарная", "classic": "Классическая", "mythical": "Мифическая"
+    }.get(car["rarity"], car["rarity"])
+    
+    await update.message.reply_text(
+        f"✅ **Машина выдана!**\n\n"
+        f"👤 Игроку: @{target_username}\n"
+        f"🚗 **{car['brand']} {car['name']}**\n"
+        f"{rarity_emoji} Редкость: {rarity_text}\n\n"
+        f"Сообщение будет отправлено в группу.",
+        parse_mode='Markdown'
+    )
+    
+    # Отправляем уведомление в группу
+    try:
+        await context.bot.send_message(
+            group_id,
+            f"🎁 **Сюрприз!** 🎁\n\n"
+            f"Поздравляем, @{target_username}!\n"
+            f"Ты получил(а) особый подарок:\n"
+            f"🚗 **{car['brand']} {car['name']}**\n"
+            f"{rarity_emoji} Редкость: {rarity_text}\n\n"
+            f"Машина уже в твоём гараже!",
+            parse_mode='Markdown'
+        )
+    except Exception as e:
+        logger.error(f"Не удалось отправить уведомление в группу: {e}")
+        
+        # ===== АДМИНСКАЯ КОМАНДА: ВЫДАТЬ СЛУЧАЙНУЮ МАШИНУ =====
+async def admin_random(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Команда для админа: /admin_random @username
+    Выдаёт игроку случайную машину
+    """
+    user_id = update.effective_user.id
+    
+    # Проверяем, админ ли
+    if user_id not in ADMIN_IDS:
+        await update.message.reply_text("❌ Эта команда только для админов!")
+        return
+    
+    if not context.args:
+        await update.message.reply_text(
+            "❌ Укажи ник игрока!\n"
+            "Пример: /admin_random @Vasya"
+        )
+        return
+    
+    target_username = context.args[0].replace('@', '')
+    
+    # Получаем случайную машину
+    car = get_random_car()
+    
+    # Ищем пользователя
+    conn = sqlite3.connect('auto_collector.db')
+    c = conn.cursor()
+    
+    c.execute("SELECT user_id, group_id FROM players WHERE username=?", (target_username,))
+    target = c.fetchone()
+    
+    if not target:
+        c.execute("SELECT user_id, group_id FROM players WHERE first_name=?", (target_username,))
+        target = c.fetchone()
+    
+    if not target:
+        await update.message.reply_text(f"❌ Игрок @{target_username} не найден!")
+        conn.close()
+        return
+    
+    target_id, group_id = target
+    
+    # Добавляем машину
+    now = datetime.now()
+    c.execute('''INSERT INTO garage 
+                 (user_id, car_id, car_name, car_brand, car_year, car_rarity, acquired_date, source) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+              (target_id, car["id"], car["name"], car["brand"], car["year"], 
+               car["rarity"], now, "admin_random"))
+    
+    c.execute("UPDATE users SET total_cars = total_cars + 1 WHERE user_id=?", (target_id,))
+    conn.commit()
+    conn.close()
+    
+    rarity_emoji = RARITY_EMOJI.get(car["rarity"], "⚪")
+    rarity_text = {
+        "common": "Обычная", "rare": "Редкая", "epic": "Эпическая",
+        "legendary": "Легендарная", "classic": "Классическая", "mythical": "Мифическая"
+    }.get(car["rarity"], car["rarity"])
+    
+    await update.message.reply_text(
+        f"✅ **Случайная машина выдана!**\n\n"
+        f"👤 Игроку: @{target_username}\n"
+        f"🚗 **{car['brand']} {car['name']}**\n"
+        f"{rarity_emoji} Редкость: {rarity_text}",
+        parse_mode='Markdown'
+    )
+    
+    # Уведомление в группу
+    try:
+        await context.bot.send_message(
+            group_id,
+            f"🎲 **Случайный дроп!** 🎲\n\n"
+            f"Игрок @{target_username} получает:\n"
+            f"🚗 **{car['brand']} {car['name']}**\n"
+            f"{rarity_emoji} Редкость: {rarity_text}\n\n"
+            f"Машина в гараже!",
+            parse_mode='Markdown'
+        )
+    except Exception as e:
+        logger.error(f"Ошибка отправки в группу: {e}")
+        
+        # ===== АДМИНСКАЯ КОМАНДА: СПИСОК МАШИН =====
+async def admin_listcars(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    
+    if user_id not in ADMIN_IDS:
+        return
+    
+    # Группируем по маркам
+    cars_by_brand = {}
+    for car in CARS_DATABASE:
+        brand = car["brand"]
+        if brand not in cars_by_brand:
+            cars_by_brand[brand] = []
+        cars_by_brand[brand].append(car)
+    
+    text = "🚗 **СПИСОК МАШИН ДЛЯ АДМИНА**\n\n"
+    
+    for brand, cars in cars_by_brand.items():
+        text += f"**{brand}** ({len(cars)}):\n"
+        for car in cars[:5]:  # первые 5 каждой марки
+            text += f"• {car['name']} ({car['year']}) — `{car['id']}`\n"
+        if len(cars) > 5:
+            text += f"  ... и ещё {len(cars)-5}\n"
+        text += "\n"
+    
+    # Отправляем частями, если слишком длинно
+    if len(text) > 4000:
+        parts = [text[i:i+4000] for i in range(0, len(text), 4000)]
+        for part in parts:
+            await update.message.reply_text(part, parse_mode='Markdown')
+    else:
+        await update.message.reply_text(text, parse_mode='Markdown')
 
 # ===== ОБРАБОТКА КНОПОК =====
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -817,6 +1039,9 @@ def main():
     application.add_handler(CommandHandler("top", top))
     application.add_handler(CommandHandler("rarity", rarity_info))
     application.add_handler(CommandHandler("trade", trade))
+    application.add_handler(CommandHandler("admin_give", auto_collector_bot.admin_give))
+    application.add_handler(CommandHandler("admin_random", auto_collector_bot.admin_random))
+    application.add_handler(CommandHandler("admin_listcars", auto_collector_bot.admin_listcars))
     
     # Кнопки
     application.add_handler(CallbackQueryHandler(button_handler))
@@ -832,6 +1057,7 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 
 
 
