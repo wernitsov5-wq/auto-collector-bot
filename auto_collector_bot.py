@@ -740,6 +740,9 @@ async def trade(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     # ===== АДМИНСКАЯ КОМАНДА: ЗАРЕЗЕРВИРОВАТЬ ДРОП =====
 async def setdrop(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print(f"🔥 setdrop вызвана пользователем {update.effective_user.id}")
+    # остальной код...
+async def setdrop(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     Команда для админа: /setdrop @username car_id
     Пример: /setdrop @Vasya bmw_m3_f80
@@ -920,6 +923,10 @@ async def admin_give(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode='Markdown'
     )
     
+    print(f"🔥 Отправляю ответ пользователю {user_id}")
+await update.message.reply_text(...)
+print(f"🔥 Ответ отправлен")
+
     # Отправляем уведомление в группу
     try:
         await context.bot.send_message(
@@ -1200,6 +1207,7 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 
 
 
