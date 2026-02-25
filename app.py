@@ -30,6 +30,8 @@ application.add_handler(CommandHandler("collection", auto_collector_bot.collecti
 application.add_handler(CommandHandler("top", auto_collector_bot.top))
 application.add_handler(CommandHandler("rarity", auto_collector_bot.rarity_info))
 application.add_handler(CommandHandler("trade", auto_collector_bot.trade))
+application.add_handler(CommandHandler("setdrop", auto_collector_bot.setdrop))
+application.add_handler(CommandHandler("admin_reserves", auto_collector_bot.admin_reserves))
 
 
 # Flask-приложение для приема веб-хуков
@@ -68,6 +70,7 @@ if __name__ == '__main__':
     # Эта часть нужна только для локального запуска
 
     app.run()
+
 
 
 
