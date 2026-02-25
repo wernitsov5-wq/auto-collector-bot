@@ -914,6 +914,8 @@ async def admin_give(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "legendary": "Легендарная", "classic": "Классическая", "mythical": "Мифическая"
     }.get(car["rarity"], car["rarity"])
     
+        # Отправляем ответ админу (тебе)
+    print(f"🔥 Отправляю ответ пользователю {user_id}")
     await update.message.reply_text(
         f"✅ **Машина выдана!**\n\n"
         f"👤 Игроку: @{target_username}\n"
@@ -922,24 +924,21 @@ async def admin_give(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"Сообщение будет отправлено в группу.",
         parse_mode='Markdown'
     )
-    
-    print(f"🔥 Отправляю ответ пользователю {user_id}")
-await update.message.reply_text(...)
-print(f"🔥 Ответ отправлен")
+    print(f"🔥 Ответ отправлен")
 
     # Отправляем уведомление в группу
-try:
-    await context.bot.send_message(
-        group_id,
-        f"🎁 **Сюрприз!** 🎁\n\n"
-        f"Поздравляем, @{target_username}!\n"
-        f"Ты получил(а) особый подарок:\n"
-        f"🚗 **{car['brand']} {car['name']}**\n"
-        f"{rarity_emoji} Редкость: {rarity_text}",
-        parse_mode='Markdown'
-    )
-except Exception as e:
-    logger.error(f"Не удалось отправить уведомление в группу: {e}")
+    try:
+        await context.bot.send_message(
+            group_id,
+            f"🎁 **Сюрприз!** 🎁\n\n"
+            f"Поздравляем, @{target_username}!\n"
+            f"Ты получил(а) особый подарок:\n"
+            f"🚗 **{car['brand']} {car['name']}**\n"
+            f"{rarity_emoji} Редкость: {rarity_text}",
+            parse_mode='Markdown'
+        )
+    except Exception as e:
+        logger.error(f"Не удалось отправить уведомление в группу: {e}")
         
         # ===== АДМИНСКАЯ КОМАНДА: ВЫДАТЬ СЛУЧАЙНУЮ МАШИНУ =====
 async def admin_random(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1206,6 +1205,7 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 
 
 
