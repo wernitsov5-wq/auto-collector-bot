@@ -928,19 +928,18 @@ await update.message.reply_text(...)
 print(f"🔥 Ответ отправлен")
 
     # Отправляем уведомление в группу
-     try:
-        await context.bot.send_message(
-            group_id,
-            f"🎁 **Сюрприз!** 🎁\n\n"
-            f"Поздравляем, @{target_username}!\n"
-            f"Ты получил(а) особый подарок:\n"
-            f"🚗 **{car['brand']} {car['name']}**\n"
-            f"{rarity_emoji} Редкость: {rarity_text}\n\n"
-            f"Машина уже в твоём гараже!",
-            parse_mode='Markdown'
-        )
-    except Exception as e:
-        logger.error(f"Не удалось отправить уведомление в группу: {e}")
+try:
+    await context.bot.send_message(
+        group_id,
+        f"🎁 **Сюрприз!** 🎁\n\n"
+        f"Поздравляем, @{target_username}!\n"
+        f"Ты получил(а) особый подарок:\n"
+        f"🚗 **{car['brand']} {car['name']}**\n"
+        f"{rarity_emoji} Редкость: {rarity_text}",
+        parse_mode='Markdown'
+    )
+except Exception as e:
+    logger.error(f"Не удалось отправить уведомление в группу: {e}")
         
         # ===== АДМИНСКАЯ КОМАНДА: ВЫДАТЬ СЛУЧАЙНУЮ МАШИНУ =====
 async def admin_random(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1207,6 +1206,7 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 
 
 
