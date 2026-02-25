@@ -1017,6 +1017,53 @@ async def admin_random(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
     except Exception as e:
         logger.error(f"Ошибка отправки в группу: {e}")
+
+# ===== АДМИНСКАЯ КОМАНДА: ПРОСМОТР РЕЗЕРВОВ =====
+async def admin_reserves(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    
+    if user_id not in ADMIN_IDS:
+        return
+    
+    conn = sqlite3.connect('auto_collector.db')
+    c = conn.cursor()
+    
+    # Активные резервы
+    c.execute('''SELECT r.user_id, p.username, r.car_id, r.created_at 
+                 FROM reserved_drops r
+                 LEFT JOIN players p ON r.user_id = p.user_id
+                 WHERE r.status='pending'
+                 ORDER BY r.created_at DESC''')
+    pending = c.fetchall()
+    
+    # Последние выполненные
+    c.execute('''SELECT r.user_id, p.username, r.car_id, r.created_at 
+                 FROM reserved_drops r
+                 LEFT JOIN players p ON r.user_id = p.user_id
+                 WHERE r.status='completed'
+                 ORDER BY r.created_at DESC
+                 LIMIT 10''')
+    completed = c.fetchall()
+    
+    conn.close()
+    
+    text = "📋 **АКТИВНЫЕ РЕЗЕРВЫ**\n\n"
+    
+    if pending:
+        for user_id, username, car_id, created_at in pending:
+            text += f"• @{username or user_id} — `{car_id}` (ждёт)\n"
+    else:
+        text += "Нет активных резервов\n"
+    
+    text += "\n📋 **ПОСЛЕДНИЕ ВЫПОЛНЕННЫЕ**\n\n"
+    
+    if completed:
+        for user_id, username, car_id, created_at in completed[:5]:
+            text += f"• @{username or user_id} — `{car_id}`\n"
+    else:
+        text += "Нет выполненных"
+    
+    await update.message.reply_text(text, parse_mode='Markdown')
         
         # ===== АДМИНСКАЯ КОМАНДА: СПИСОК МАШИН =====
 async def admin_listcars(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1153,6 +1200,7 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 
 
 
