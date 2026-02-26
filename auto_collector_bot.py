@@ -740,9 +740,6 @@ async def trade(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     # ===== АДМИНСКАЯ КОМАНДА: ЗАРЕЗЕРВИРОВАТЬ ДРОП =====
 async def setdrop(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    print(f"🔥 setdrop вызвана пользователем {update.effective_user.id}")
-    # остальной код...
-async def setdrop(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     Команда для админа: /setdrop @username car_id
     Пример: /setdrop @Vasya bmw_m3_f80
@@ -766,7 +763,7 @@ async def setdrop(update: Update, context: ContextTypes.DEFAULT_TYPE):
     target_username = context.args[0].replace('@', '')
     car_id = context.args[1]
     
-    # Проверяем, существует ли такая машина
+    # 🔍 **ПРОВЕРЯЕМ, СУЩЕСТВУЕТ ЛИ МАШИНА**
     car = None
     for c in CARS_DATABASE:
         if c["id"] == car_id:
@@ -774,8 +771,10 @@ async def setdrop(update: Update, context: ContextTypes.DEFAULT_TYPE):
             break
     
     if not car:
-        await update.message.reply_text(f"❌ Машина с ID '{car_id}' не найдена!\n"
-                                        f"Используй /admin_listcars для просмотра ID")
+        await update.message.reply_text(
+            f"❌ Машина с ID '{car_id}' не найдена!\n"
+            f"Используй /admin_listcars для просмотра доступных ID машин."
+        )
         return
     
     # Ищем пользователя в базе
@@ -827,6 +826,7 @@ async def setdrop(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "legendary": "Легендарная", "classic": "Классическая", "mythical": "Мифическая"
     }.get(car["rarity"], car["rarity"])
     
+    # Отправляем ответ админу
     await update.message.reply_text(
         f"✅ **Дроп зарезервирован!**\n\n"
         f"👤 Игрок: @{username}\n"
@@ -837,6 +837,20 @@ async def setdrop(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode='Markdown'
     )
     
+    # Отправляем уведомление в группу (если нужно)
+    # try:
+    #     await context.bot.send_message(
+    #         group_id,
+    #         f"🎁 **Сюрприз!** 🎁\n\n"
+    #         f"Поздравляем, @{username}!\n"
+    #         f"Ты получил(а) особый подарок:\n"
+    #         f"🚗 **{car['brand']} {car['name']}**\n"
+    #         f"{rarity_emoji} Редкость: {rarity_text}",
+    #         parse_mode='Markdown'
+    #     )
+    # except Exception as e:
+    #     logger.error(f"Не удалось отправить уведомление в группу: {e}")
+
     # ===== АДМИНСКАЯ КОМАНДА: ВЫДАТЬ МАШИНУ =====
 async def admin_give(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
@@ -1205,6 +1219,7 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 
 
 
